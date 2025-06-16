@@ -13,9 +13,9 @@ public class UserCredential {
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
+    @Enumerated(EnumType.STRING)
     public String getPassword() {
         return password;
     }
