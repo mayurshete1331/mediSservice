@@ -15,8 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.stream.Collectors;
 import java.util.Set; // Import Set
+import java.util.stream.Collectors; // Import Collectors
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,7 +26,7 @@ public class AuthController {
     private JwtService jwtService;
 
     @Autowired
-    private UserCredentialService userCredentialService; // Renamed from userService for clarity
+    private UserCredentialService userCredentialService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -42,45 +42,39 @@ public class AuthController {
                 UserCredential user = userCredentialService.findByUsername(authRequest.getUsername())
                         .orElseThrow(() -> new UsernameNotFoundException("User not found after successful authentication"));
 
-                // Original problematic line: Set<String> roles = user.getRoles() != null ? user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()) : Set.of();
+                // Get the single role entity from UserCredential, then its Role enum name, then convert to a Set<String>
+                Set<String> roles;
+                if (user.getRole() != null && user.getRole().getRoleName() != null) {
+                    roles = Set.of(user.getRole().getRoleName().name()); // Access the Role enum name from the Roles entity
+                } else {
+                    roles = Set.of(); // No role found, return an empty set
+                }
 
-                Set<String> roles = (user.getRole() != null)
-                        ? Set.of(user.getRole().name()) // Convert single Role to a Set containing its name
-                        : Set.of();
-
-                // --- IMPORTANT CHANGE HERE ---
-                // If you modified JwtService.generateToken to accept userId (e.g., generateToken(userName, userId, roles))
+                // Call JwtService.generateToken with the username, userId, and the Set<String> of roles
                 String token = jwtService.generateToken(user.getUsername(), user.getId(), roles);
-                // If your JwtService.generateToken method does NOT accept userId,
-                // you would keep the original call:
-                // String token = jwtService.generateToken(user.getUsername(), user.getRoles());
-                // -----------------------------
 
                 return ResponseEntity.ok(new AuthResponse(token, user.getId(), roles));
             } else {
-                // ... (rest of the error handling remains the same)
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("Authentication failed", null, null));
             }
         } catch (UsernameNotFoundException e) {
-            // ... (rest of the error handling remains the same)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("User not found", null, null));
         } catch (Exception e) {
-            // ... (rest of the error handling remains the same)
             System.err.println("Authentication error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("Invalid username or password", null, null));
         }
     }
-    // MODIFIED: Accepts AuthRequest for registration
+
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody AuthRequest authRequest) { // Change UserCredential to AuthRequest
+    public ResponseEntity<String> register(@RequestBody AuthRequest authRequest) {
         try {
-            // Call the new registerUser method in UserCredentialService
+            // The UserCredentialService will handle finding/setting the Roles entity based on default or provided logic
             userCredentialService.registerUser(authRequest);
             return ResponseEntity.ok("User registered successfully!");
-        } catch (RuntimeException e) { // Catch RuntimeException for specific messages from service
+        } catch (RuntimeException e) {
             System.err.println("Registration error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
-        } catch (Exception e) { // Catch any other unexpected exceptions
+        } catch (Exception e) {
             System.err.println("Unexpected registration error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred during registration.");
         }

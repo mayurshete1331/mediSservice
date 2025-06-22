@@ -1,17 +1,18 @@
-// src/main/java/com/example/demo/service/UserCredentialService.java (Interface)
+// src/main/java/com/example/demo/service/UserCredentialService.java
 package com.example.demo.service;
 
-import com.example.demo.dto.AuthRequest; // NEW: Import AuthRequest
+import com.example.demo.dto.AuthRequest;
+import com.example.demo.model.Role; // Import the Role enum
 import com.example.demo.model.UserCredential;
-import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-@Service
+
 public interface UserCredentialService {
-    UserCredential save(UserCredential userCredential); // Existing method for general save
     Optional<UserCredential> findByUsername(String username);
-    // NEW: Method for user registration using AuthRequest
+    Optional<UserCredential> findById(Long id); // Uncommented this line to resolve compilation error
     UserCredential registerUser(AuthRequest authRequest);
-    // You might also want a method for finding by ID for login response
-    Optional<UserCredential> findById(Long id);
+    UserCredential createAndSaveUserWithRole(String username, String password, Role roleEnum);
+
+    // This signature must exactly match the one in UserCredentialServiceImpl
+    UserCredential save(UserCredential userCredential);
 }
