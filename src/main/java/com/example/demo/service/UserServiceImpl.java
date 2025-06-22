@@ -1,7 +1,9 @@
-package com.example.demo.service;
+// src/main/java/com/example/demo/service/impl/UserServiceImpl.java
+package com.example.demo.service.impl;
 
-import com.example.demo.model.User;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.model.UserDetail;
+import com.example.demo.repository.UserDetailRepository;
+import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,20 +12,20 @@ import java.util.List;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
+    private final UserDetailRepository userDetailRepository;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UserServiceImpl(UserDetailRepository userDetailRepository) {
+        this.userDetailRepository = userDetailRepository;
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDetail> getAllUsers() {
+        return userDetailRepository.findAll();
     }
 
     @Override
-    public User createUser(User user) {
-        return userRepository.save(user);
+    public UserDetail createUser(UserDetail user) {
+        return userDetailRepository.save(user);
     }
 }

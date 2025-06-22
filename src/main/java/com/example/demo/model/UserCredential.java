@@ -1,9 +1,18 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "user_credential")
 public class UserCredential {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,34 +21,16 @@ public class UserCredential {
     private String username;
     private String password;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    private Set<Role> roles;
+    @Enumerated(EnumType.STRING) // Store the enum name as a string
+    @Column(name = "role_id") // This will create a column named role_id in user_credential table
+    private Role role; // Changed from Set<Role> to single Role
 
-    @Enumerated(EnumType.STRING)
-    public String getPassword() {
-        return password;
-    }
+    @OneToOne(mappedBy = "userCredential", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    private UserDetail userDetail;
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
+    public UserCredential(String username, String password, Role role) { // Constructor updated
         this.username = username;
+        this.password = password;
+        this.role = role;
     }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-
-
-    // Getters and Setters
 }

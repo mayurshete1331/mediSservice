@@ -5,6 +5,7 @@ import com.example.demo.model.UserCredential; // Import your UserCredential mode
 import com.example.demo.model.Role; // NEW: Import your Role enum
 import com.example.demo.repository.UserCredentialRepository; // Import your UserCredentialRepository
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User; // Spring Security's User object
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,14 +47,16 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 2. Convert your custom UserCredential roles (Role enum) to Spring Security's GrantedAuthority objects.
         // Spring Security expects roles to be prefixed with "ROLE_".
         // The Role enum already includes the "ROLE_" prefix, so we just need to get its name().
-        Collection<SimpleGrantedAuthority> authorities;
-        if (userCredential.getRoles() != null) {
-            authorities = userCredential.getRoles().stream()
-                    .map(Role::name) // Corrected: Use Role::name() to get the string representation of the enum
-                    .map(SimpleGrantedAuthority::new) // Create SimpleGrantedAuthority directly from the string
-                    .collect(Collectors.toList());
+//        Collection<SimpleGrantedAuthority> authorities;
+        // Original problematic line: if (userCredential.getRoles() != null) {
+
+        // When UserCredential has a single 'Role' field:
+        Collection<? extends GrantedAuthority> authorities;
+        if (userCredential.getRole() != null) { // Check the single role
+            // Convert the single Role enum to a Collection of GrantedAuthority
+            authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userCredential.getRole().name()));
         } else {
-            authorities = Collections.emptyList(); // Handle case where roles might be null
+            authorities = Collections.emptyList();
         }
 
         // 3. Return a Spring Security User object.

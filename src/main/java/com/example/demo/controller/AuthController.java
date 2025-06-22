@@ -5,75 +5,84 @@ import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.model.UserCredential;
 import com.example.demo.service.JwtService;
-import com.example.demo.service.UserCredentialService;
+import com.example.demo.service.UserCredentialService; // Ensure this is the UserCredentialService
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus; // Import HttpStatus
-import org.springframework.http.ResponseEntity; // Import ResponseEntity
-import org.springframework.security.authentication.AuthenticationManager; // Import AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken; // Import
-import org.springframework.security.core.Authentication; // Import
-import org.springframework.security.core.userdetails.UsernameNotFoundException; // Import for specific exception handling
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
+import java.util.Set; // Import Set
 
 @RestController
 @RequestMapping("/api/auth")
-// You can add @CrossOrigin here too, though global config in SecurityConfig is usually enough
-// @CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
 
     @Autowired
     private JwtService jwtService;
 
     @Autowired
-    private UserCredentialService userService; // Still needed for register and retrieving UserCredential object
+    private UserCredentialService userCredentialService; // Renamed from userService for clarity
 
     @Autowired
-    private AuthenticationManager authenticationManager; // Autowire AuthenticationManager
+    private AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
         try {
-            // Use AuthenticationManager to authenticate the user
-            // This will trigger CustomUserDetailsService.loadUserByUsername()
-            // and then compare passwords using the configured PasswordEncoder.
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
             );
 
-            // If authentication is successful (no exception thrown), generate JWT
             if (authentication.isAuthenticated()) {
-                // Retrieve the full UserCredential object to get roles for JWT generation
-                // The principal from authentication might be Spring Security's UserDetails,
-                // so we fetch our UserCredential directly.
-                UserCredential user = userService.findByUsername(authRequest.getUsername())
+                UserCredential user = userCredentialService.findByUsername(authRequest.getUsername())
                         .orElseThrow(() -> new UsernameNotFoundException("User not found after successful authentication"));
 
-                // Generate JWT token with username and roles
-                String token = jwtService.generateToken(user.getUsername(), user.getRoles());
-                return ResponseEntity.ok(new AuthResponse(token)); // Return 200 OK with token
+                // Original problematic line: Set<String> roles = user.getRoles() != null ? user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()) : Set.of();
+
+                Set<String> roles = (user.getRole() != null)
+                        ? Set.of(user.getRole().name()) // Convert single Role to a Set containing its name
+                        : Set.of();
+
+                // --- IMPORTANT CHANGE HERE ---
+                // If you modified JwtService.generateToken to accept userId (e.g., generateToken(userName, userId, roles))
+                String token = jwtService.generateToken(user.getUsername(), user.getId(), roles);
+                // If your JwtService.generateToken method does NOT accept userId,
+                // you would keep the original call:
+                // String token = jwtService.generateToken(user.getUsername(), user.getRoles());
+                // -----------------------------
+
+                return ResponseEntity.ok(new AuthResponse(token, user.getId(), roles));
             } else {
-                // This block should theoretically not be reached if authenticate() throws
-                // an exception on failure, but included for explicit handling.
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("Authentication failed"));
+                // ... (rest of the error handling remains the same)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("Authentication failed", null, null));
             }
         } catch (UsernameNotFoundException e) {
-            // Handles cases where the user doesn't exist in the database
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("User not found"));
+            // ... (rest of the error handling remains the same)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("User not found", null, null));
         } catch (Exception e) {
-            // Catches BadCredentialsException (incorrect password) and other authentication exceptions
-            System.err.println("Authentication error: " + e.getMessage()); // Log the error for debugging
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("Invalid username or password"));
+            // ... (rest of the error handling remains the same)
+            System.err.println("Authentication error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse("Invalid username or password", null, null));
         }
     }
-
+    // MODIFIED: Accepts AuthRequest for registration
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserCredential user) {
+    public ResponseEntity<String> register(@RequestBody AuthRequest authRequest) { // Change UserCredential to AuthRequest
         try {
-            userService.save(user); // Password hashing is handled inside userService.save()
+            // Call the new registerUser method in UserCredentialService
+            userCredentialService.registerUser(authRequest);
             return ResponseEntity.ok("User registered successfully!");
-        } catch (Exception e) {
+        } catch (RuntimeException e) { // Catch RuntimeException for specific messages from service
             System.err.println("Registration error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
+        } catch (Exception e) { // Catch any other unexpected exceptions
+            System.err.println("Unexpected registration error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred during registration.");
         }
     }
 }

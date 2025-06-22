@@ -21,7 +21,17 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5' // Use the latest stable version
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    testCompileOnly 'org.projectlombok:lombok:1.18.32'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.32'
+    // For PDF processing (text extraction)
+    implementation 'org.apache.pdfbox:pdfbox:2.0.29' // Use a recent stable version
+    // For OCR (Tesseract via Tess4J) - Requires Tesseract installed natively on the server
+    implementation 'net.sourceforge.tess4j:tess4j:5.11.0' // Use a recent stable version
 }
+
 
 test {
     useJUnitPlatform()

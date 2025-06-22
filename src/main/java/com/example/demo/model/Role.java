@@ -1,9 +1,10 @@
+// src/main/java/com/example/demo/model/Role.java
 package com.example.demo.model;
 
 public enum Role {
-    ROLE_ADMIN,
-    ROLE_DOCTOR,
-    ROLE_PATIENT,
-    ROLE_STAFF;
-
-  }
+    ADMIN,
+    DOCTOR,
+    PATIENT,
+    PHARMACIST,
+    STAFF
+}
