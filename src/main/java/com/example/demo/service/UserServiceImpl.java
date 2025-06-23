@@ -1,5 +1,4 @@
-// src/main/java/com/example/demo/service/impl/UserServiceImpl.java
-package com.example.demo.service.impl;
+package com.example.demo.service;// src/main/java/com/example/demo/service/impl/UserServiceImpl.java
 
 import com.example.demo.model.UserDetail;
 import com.example.demo.repository.UserDetailRepository;

@@ -15,7 +15,7 @@ import net.sourceforge.tess4j.TesseractException;
 import java.io.IOException;
 import java.util.List;
 
-//@RestController
+@RestController
 @RequestMapping("/api/invoices") // Changed request mapping
 public class InvoiceUploadController {
 
