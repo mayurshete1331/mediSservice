@@ -1,11 +1,35 @@
-/caches/modules-2/files-2.1/org.objenesis/objenesis-parent/3.3/60b46fea1dc4cb9c3123f8c366f8b33d0c774fa3/objenesis-parent-3.3.pom
-/.gradle/
-/build/
-/out/
-*.log
+# Compiled class files
 *.class
-.DS_Store
+
+# Log files
+*.log
+
+# Package Manager files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Gradle files
+.gradle/
+/build/
+/out/ # IDE output directory
+
+# IntelliJ IDEA files
 .idea/
 *.iml
-.gradle/
-*.lock
+*.ipr
+*.iws
+
+# macOS files
+.DS_Store
+
+# Misc
+# Add this if you want to ignore all lock files, but be mindful of other tools
+# that might use lock files that *should* be committed (e.g., frontend package managers)
+# *.lock
+
+# Example of ignoring specific cache parts, but generally not needed if .gradle/ is ignored
+# /caches/modules-2/
