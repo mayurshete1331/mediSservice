@@ -30,6 +30,5 @@
 # Add this if you want to ignore all lock files, but be mindful of other tools
 # that might use lock files that *should* be committed (e.g., frontend package managers)
 # *.lock
-
 # Example of ignoring specific cache parts, but generally not needed if .gradle/ is ignored
 # /caches/modules-2/
