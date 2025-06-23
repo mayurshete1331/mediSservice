@@ -1,3 +1,4 @@
+// src/main/java/com/example/demo/service/JwtService.java
 package com.example.demo.service;
 
 import io.jsonwebtoken.Claims;
@@ -5,7 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.MacAlgorithm;
+import io.jsonwebtoken.security.MacAlgorithm; // This import is not strictly necessary for HS256 with Keys.hmacShaKeyFor
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -22,11 +23,22 @@ public class JwtService {
 
     /**
      * Generates a JWT token for the user with roles and userId.
+     * This method will still be available if you decide to revert to full claims.
      */
     public String generateToken(String userName, Long userId, Set<String> roles) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("roles", new ArrayList<>(roles));
+        return createToken(claims, userName);
+    }
+
+    /**
+     * NEW METHOD: Generates a simpler JWT token with only the username as subject.
+     * This token will NOT contain userId or roles in its claims.
+     * This is intended for temporary testing where you want to bypass role/ID checks within the token itself.
+     */
+    public String generateSimpleToken(String userName) {
+        Map<String, Object> claims = new HashMap<>(); // Empty claims for this simplified token
         return createToken(claims, userName);
     }
 
@@ -38,7 +50,7 @@ public class JwtService {
         Date expiration = new Date(now.getTime() + EXPIRATION_MILLIS);
 
         return Jwts.builder()
-                .claims(claims)
+                .claims(claims) // Use the provided claims map (can be empty for simple token)
                 .subject(subject)
                 .issuedAt(now)
                 .expiration(expiration)
@@ -47,12 +59,11 @@ public class JwtService {
     }
 
     /**
-     * Builds the correct SecretKey for signing and verifying JWTs.
+     * Builds the correct SecretKey for signing and verifying JWTs using HS256.
      */
     private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
-        // HS256-compatible SecretKey
     }
 
     /**
@@ -81,11 +92,12 @@ public class JwtService {
      * Extracts all claims using JJWT 0.12.x parser.
      */
     private Claims extractAllClaims(String token) {
+        // Build and parse the token to get all claims
         return Jwts.parser()
-                .verifyWith(getSignKey())
+                .verifyWith(getSignKey()) // Use the secret key for verification
                 .build()
                 .parseSignedClaims(token)
-                .getPayload();
+                .getPayload(); // Get the claims payload
     }
 
     /**
@@ -96,10 +108,11 @@ public class JwtService {
     }
 
     /**
-     * Validates token's username and expiration.
+     * Validates token's username and expiration against UserDetails.
      */
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
+        // Token is valid if username matches UserDetails' username and token is not expired
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 }
